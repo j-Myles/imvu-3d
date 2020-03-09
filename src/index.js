@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 var scene, camera, renderer;
-var geometry;
+var geometry, material;
 
 function init() {
 
@@ -14,6 +14,10 @@ function set_camera() {
 
 function set_geometry() {
     geometry = new THREE.BoxBufferGeometry();
+}
+
+function set_material() {
+    material = new THREE.MeshNormalMaterial({});
 }
 
 function set_scene() {
