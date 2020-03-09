@@ -1,4 +1,4 @@
-import { Scene } from 'three';
+import * as THREE from 'three';
 
 var scene, camera, renderer;
 
@@ -13,4 +13,10 @@ function set_camera() {
 
 function set_scene() {
     scene = new Scene();
+}
+
+function set_renderer() {
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 }
