@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 
 var scene, camera, renderer;
+var geometry;
 
 function init() {
 
@@ -9,6 +10,10 @@ function init() {
 function set_camera() {
     camera = new THREE.PerspectiveCamera(50, window.innerWidth, window.innerHeight,
         0.1, 1000);
+}
+
+function set_geometry() {
+    geometry = new THREE.BoxBufferGeometry();
 }
 
 function set_scene() {
