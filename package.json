@@ -16,5 +16,9 @@
   "bugs": {
     "url": "https://github.com/j-Myles/imvu-3d/issues"
   },
-  "homepage": "https://github.com/j-Myles/imvu-3d#readme"
+  "homepage": "https://github.com/j-Myles/imvu-3d#readme",
+  "devDependencies": {
+    "webpack": "^4.42.0",
+    "webpack-cli": "^3.3.11"
+  }
 }
