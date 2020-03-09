@@ -3,21 +3,31 @@ import * as THREE from 'three';
 var scene, camera, renderer;
 var geometry, material, mesh;
 
-function init() {
+init();
+animate();
 
+function init() {
+    set_scene();
+    set_camera();
+    set_renderer();
+    set_geometry();
+    set_material();
+    set_mesh();
+    scene.add(mesh);
+    camera.position.z = 5;
 }
 
 function set_camera() {
-    camera = new THREE.PerspectiveCamera(50, window.innerWidth, window.innerHeight,
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight,
         0.1, 1000);
 }
 
 function set_geometry() {
-    geometry = new THREE.BoxBufferGeometry();
+    geometry = new THREE.BoxGeometry();
 }
 
 function set_material() {
-    material = new THREE.MeshNormalMaterial({});
+    material = new THREE.MeshBasicMaterial({color: 0x00ff00});
 }
 
 function set_mesh() {
@@ -25,7 +35,7 @@ function set_mesh() {
 }
 
 function set_scene() {
-    scene = new Scene();
+    scene = new THREE.Scene();
 }
 
 function set_renderer() {
