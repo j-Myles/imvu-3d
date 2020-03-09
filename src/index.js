@@ -33,3 +33,8 @@ function set_renderer() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 }
+
+function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+}
