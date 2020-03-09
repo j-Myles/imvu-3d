@@ -1,4 +1,6 @@
 const path = require('path');
+const htmlWebpackPlugin = require('html-webpack-plugin');
+
 module.exports = {
   mode: 'development',
   entry: path.join(__dirname, 'src', 'index'),
@@ -9,6 +11,7 @@ module.exports = {
     filename: "bundle.js",
     chunkFilename: '[name].js'
   },
+
   module: {
     rules: [{
       test: /.jsx?$/,
@@ -28,11 +31,23 @@ module.exports = {
           }]
         ]
       }
+    }, {
+      test: /.html?$/,
+      loader: 'html-loader',
     }]
   },
+
+  plugins: [
+    new htmlWebpackPlugin({
+      template: "./src/index.html",
+      filename: "./index.html"
+    })
+  ],
+  
   resolve: {
     extensions: ['.json', '.js', '.jsx']
   },
+
   devtool: 'source-map',
   devServer: {
     contentBase: path.join(__dirname, '/dist/'),
