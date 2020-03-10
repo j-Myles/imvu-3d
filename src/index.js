@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
+
 
 var scene, camera, renderer;
-var orbit;
+var orbit, transform;
 
 var meshes = {};
 
@@ -20,11 +22,14 @@ function init() {
     set_renderer();
     set_window();
     set_orbit();
+    set_transform();
     var geometry = set_default_geometry();
     var material = set_default_material();
     var mesh = set_mesh(geometry, material);
     meshes["default"] = mesh;
     scene.add(mesh);
+    transform.attach(mesh);
+    scene.add(transform);
     set_keys();
 
 }
@@ -70,6 +75,15 @@ function set_scene() {
 
 }
 
+function set_transform() {
+    transform = new TransformControls(camera, renderer.domElement);
+    transform.addEventListener('change', render);
+    transform.addEventListener('dragging-changed', function(e) {
+        orbit.enabled = !e.value;
+    });
+
+}
+
 function set_window() {
     window.addEventListener('resize', onWindowResize, false);
 }
@@ -82,6 +96,10 @@ function set_renderer() {
 
 function animate() {
     requestAnimationFrame(animate);
+    render();
+}
+
+function render() {
     renderer.render(scene, camera);
 }
 
@@ -90,5 +108,6 @@ function onWindowResize() {
     camera.updateProjectionMatrix();
 
     renderer.setSize(window.innerWidth, window.innerHeight);
+    render();
 
 }
