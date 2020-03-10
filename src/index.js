@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 var scene, camera, renderer;
-var geometry, material, mesh;
+
 var orbit;
 
 const DEFAULT_SIZE = 100;
@@ -19,9 +19,9 @@ function init() {
     set_renderer();
     set_window();
     set_orbit();
-    set_geometry();
-    set_material();
-    set_mesh();
+    var geometry = set_default_geometry();
+    var material = set_default_material();
+    var mesh = set_mesh(geometry, material);
     scene.add(mesh);
 
 }
@@ -33,16 +33,16 @@ function set_camera() {
 
 }
 
-function set_geometry() {
-    geometry = new THREE.BoxBufferGeometry(DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_SIZE);
+function set_default_geometry() {
+    return new THREE.BoxBufferGeometry(DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_SIZE);
 }
 
-function set_material() {
-    material = new THREE.MeshNormalMaterial({});
+function set_default_material() {
+    return new THREE.MeshNormalMaterial({});
 }
 
-function set_mesh() {
-    mesh = new THREE.Mesh(geometry, material);
+function set_mesh(geometry, material) {
+    return new THREE.Mesh(geometry, material);
 }
 
 function set_orbit() {
