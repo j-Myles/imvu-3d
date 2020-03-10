@@ -1,7 +1,8 @@
+var $ = require('jquery');
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
-import { MOUSE, Vector2 } from 'three';
+import { DragControls } from 'three/examples/jsm/controls/DragControls';
 
 var scene, camera, renderer;
 var raycaster, intersects, mouse;
@@ -76,7 +77,7 @@ function set_default_geometry() {
 }
 
 function set_default_material() {
-    return new THREE.MeshBasicMaterial({color: 0x606060});
+    return new THREE.MeshLambertMaterial({color: 0x606060});
 }
 
 function set_default_materials() {
@@ -92,6 +93,12 @@ function set_default_materials() {
 
 function set_drag() {
     drag = new DragControls(camera, renderer.domElement);
+    drag.addEventListener('dragstart', function(e) {
+        e.object.material.emissive.set(0xaaaaaa);
+    });
+    drag.addEventListener('dragend', function(e) {
+        e.object.material.emissive.set(0x000000);
+    });
 }
 
 function set_edges(mesh) {
@@ -201,6 +208,7 @@ function undo_transform() {
             meshes[element].rotation.copy(next_transform.rotation);
             meshes[element].scale.copy(next_transform.scale);
             target.pop();
+            render();
         }
     });
 }
@@ -212,12 +220,19 @@ function animate() {
 
 function render() {
     raycaster.setFromCamera(mouse, camera);
-    // intersects = raycaster.intersectObjects(Object.values(meshes), true);
-    // if (!((mouse.x == 0) && (mouse.y == 0))) {
-    //     for (var i = 0; i < intersects.length; i++) {
-    //         intersects[i].object.material[0].color.set(0xffffff);
-    //     }
-    // }
+    intersects = raycaster.intersectObjects(Object.values(meshes));
+    if (!((mouse.x == 0) && (mouse.y == 0))) {
+        if (intersects.length > 0) {
+            $('body').css('cursor', 'pointer');
+        } else {
+            $('body').css('cursor', 'default');
+        }
+        // for (var i = 0; i < intersects.length; i++) {
+        //     console.log("Here");
+        //     break;
+        //     // intersects[i].object.material[0].color.set(0xffffff);
+        // }
+    }
     renderer.render(scene, camera);
 }
 
