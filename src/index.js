@@ -1,7 +1,11 @@
 import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+
 
 var scene, camera, renderer;
 var geometry, material, mesh;
+var orbit;
+
 
 init();
 animate();
@@ -11,6 +15,7 @@ function init() {
     set_camera();
     set_renderer();
     set_window();
+    set_orbit();
     set_geometry();
     set_material();
     set_mesh();
@@ -33,6 +38,10 @@ function set_material() {
 
 function set_mesh() {
     mesh = new THREE.Mesh(geometry, material);
+}
+
+function set_orbit() {
+    orbit = new OrbitControls(camera, renderer.domElement);
 }
 
 function set_scene() {
