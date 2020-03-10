@@ -1,14 +1,13 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
-
-
 var scene, camera, renderer;
 var geometry, material, mesh;
 var orbit;
 
+const DEFAULT_SIZE = 100;
 const GRID_CELLS = 1000;
-const GRID_ROWS = 100;
+const GRID_ROWS = 10;
 
 
 init();
@@ -24,20 +23,22 @@ function init() {
     set_material();
     set_mesh();
     scene.add(mesh);
-    camera.position.z = 5;
+
 }
 
 function set_camera() {
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight,
         0.1, 1000);
+    camera.position.set(DEFAULT_SIZE * 2, DEFAULT_SIZE * 2, DEFAULT_SIZE * 2);
+
 }
 
 function set_geometry() {
-    geometry = new THREE.BoxGeometry();
+    geometry = new THREE.BoxBufferGeometry(DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_SIZE);
 }
 
 function set_material() {
-    material = new THREE.MeshBasicMaterial({color: 0x00ff00});
+    material = new THREE.MeshNormalMaterial({});
 }
 
 function set_mesh() {
@@ -74,5 +75,5 @@ function onWindowResize() {
     camera.updateProjectionMatrix();
 
     renderer.setSize(window.innerWidth, window.innerHeight);
-    
+
 }
