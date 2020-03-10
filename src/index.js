@@ -5,7 +5,7 @@ import { TransformControls } from 'three/examples/jsm/controls/TransformControls
 import { DragControls } from 'three/examples/jsm/controls/DragControls';
 
 var scene, camera, renderer;
-var raycaster, intersects, mouse;
+var raycaster, mouse;
 
 var orbit;
 var transform, transforms;
@@ -40,8 +40,9 @@ function init() {
     var mesh = set_mesh(geometry, material);
     scene.add(mesh);
     set_edges(mesh);
-    transform.attach(mesh);
+    // transform.attach(mesh);
     scene.add(transform);
+    set_clicks();
     set_keys();
 }
 
@@ -78,7 +79,8 @@ function set_default_geometry() {
 }
 
 function set_default_material() {
-    return new THREE.MeshLambertMaterial({color: 0x606060});
+    return new THREE.MeshLambertMaterial({color: 0x606060, emissive: 0xffffff, 
+        emissiveIntensity: 0});
 }
 
 function set_default_materials() {
@@ -107,6 +109,23 @@ function set_edges(mesh) {
     var material = new THREE.LineBasicMaterial({color: 0xffffff});
     var edges = new THREE.LineSegments(geometry, material);
     mesh.add(edges);
+}
+
+function set_clicks() {
+    window.addEventListener('click', function(e) {
+        raycaster.setFromCamera(mouse, camera);
+        var intersects = raycaster.intersectObjects(Object.values(meshes));
+        if (!((mouse.x == 0) && (mouse.y == 0))) {
+            if (intersects.length > 0) {
+                transform.detach();
+                for (var i = 0; i < intersects.length; i++) {
+                    intersects[i].object.material.emissiveIntensity = 0.25;
+                    transform.attach(intersects[i].object);
+                    break;
+                }
+            }
+        }
+    });
 }
 
 function set_keys() {
@@ -155,6 +174,7 @@ function set_logs() {
 
 function set_mesh(geometry, material) {
     var mesh = new THREE.Mesh(geometry, material);
+    
     selectedMeshes = [mesh.uuid];
     meshes[mesh.uuid] = mesh;
     transforms[mesh.uuid] = [];
@@ -227,7 +247,7 @@ function animate() {
 
 function render() {
     raycaster.setFromCamera(mouse, camera);
-    intersects = raycaster.intersectObjects(Object.values(meshes));
+    var intersects = raycaster.intersectObjects(Object.values(meshes));
     if (!((mouse.x == 0) && (mouse.y == 0))) {
         if (intersects.length > 0) {
             $('body').css('cursor', 'pointer');
