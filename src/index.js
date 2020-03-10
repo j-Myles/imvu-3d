@@ -2,8 +2,9 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 var scene, camera, renderer;
-
 var orbit;
+
+var meshes = {};
 
 const DEFAULT_SIZE = 100;
 const GRID_CELLS = 1000;
@@ -22,7 +23,9 @@ function init() {
     var geometry = set_default_geometry();
     var material = set_default_material();
     var mesh = set_mesh(geometry, material);
+    meshes["default"] = mesh;
     scene.add(mesh);
+    set_keys();
 
 }
 
@@ -39,6 +42,18 @@ function set_default_geometry() {
 
 function set_default_material() {
     return new THREE.MeshNormalMaterial({});
+}
+
+function set_keys() {
+    window.addEventListener('keydown', function(e) {
+        switch(e.keyCode) {
+            case 87: // W
+                Object.entries(meshes).forEach(([key, val]) => {
+                    val.material.wireframe = !val.material.wireframe;
+                });
+
+        }
+    })
 }
 
 function set_mesh(geometry, material) {
