@@ -2,9 +2,13 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 
+
 var scene, camera, renderer;
 var geometry, material, mesh;
 var orbit;
+
+const GRID_CELLS = 1000;
+const GRID_ROWS = 100;
 
 
 init();
@@ -46,6 +50,8 @@ function set_orbit() {
 
 function set_scene() {
     scene = new THREE.Scene();
+    scene.add(new THREE.GridHelper(GRID_CELLS, GRID_ROWS));
+
 }
 
 function set_window() {
