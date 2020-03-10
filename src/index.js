@@ -6,15 +6,17 @@ import { MOUSE, Vector2 } from 'three';
 var scene, camera, renderer;
 var raycaster, intersects, mouse;
 
-var orbit
-var transform
+var orbit;
+var transform, transforms;
 var drag;
 
 var meshes = {};
+var selectedMeshes = []
 
 const DEFAULT_SIZE = 100;
 const GRID_CELLS = 1000;
 const GRID_ROWS = 10;
+const MAX_HISTORY = 10;
 
 
 init();
@@ -29,25 +31,36 @@ function init() {
     set_window();
     set_orbit();
     set_transform();
+    set_logs();
     var geometry = set_default_geometry();
     // var material = set_default_material();
     var material= set_default_materials();
     var mesh = set_mesh(geometry, material);
-    console.log(mesh);
-    meshes["default"] = mesh;
     scene.add(mesh);
     transform.attach(mesh);
     scene.add(transform);
     set_keys();
+}
 
+function log_transform(mesh) {
+    var log = {};
+    log["position"] = mesh.position.clone();
+    log["rotation"] = mesh.rotation.clone();
+    log["scale"] = mesh.scale.clone();
+    if (transforms[mesh.uuid].length >= MAX_HISTORY) {
+        transforms[mesh.uuid].shift();
+    }
+    transforms[mesh.uuid].push(log);
+}
+
+function log_transforms() {
+    selectedMeshes.forEach(element => {
+        log_transform(meshes[element]);
+    })
 }
 
 function reset_controls() {
     transform.visible = false;
-}
-
-function undo_transform(id) {
-    
 }
 
 function set_camera() {
@@ -99,6 +112,9 @@ function set_keys() {
             case 84: // T
                 transform.visible && transform.setMode("translate");
                 break;
+            case 85: // U
+                transform.visible && undo_transform();
+                break;
             case 87: // W
                 Object.entries(meshes).forEach(([key, val]) => {
                     // val.material.wireframe = !val.material.wireframe;
@@ -111,8 +127,17 @@ function set_keys() {
     });
 }
 
+function set_logs() {
+    transforms = {};
+}
+
 function set_mesh(geometry, material) {
-    return new THREE.Mesh(geometry, material);
+    var mesh = new THREE.Mesh(geometry, material);
+    selectedMeshes = [mesh.uuid];
+    meshes[mesh.uuid] = mesh;
+    transforms[mesh.uuid] = [];
+    log_transforms();
+    return mesh;
 }
 
 function set_mouse() {
@@ -141,23 +166,35 @@ function set_scene() {
 
 function set_transform() {
     transform = new TransformControls(camera, renderer.domElement);
-    console.log(transform);
-    transform.addEventListener('scale-changed', function(e) {
-        console.log("Hey");
-    });
     transform.addEventListener('change', function(e) {
         render();
     });
     transform.addEventListener('dragging-changed', function(e) {
         orbit.enabled = !e.value;
     });
-
+    transform.domElement.addEventListener('mouseup', function(e) {
+        log_transforms();
+    });
+    
 }
 
 function set_window() {
     window.addEventListener('resize', onWindowResize, false);
     window.addEventListener('mousemove', onMouseMove, false);
 
+}
+
+function undo_transform() {
+    selectedMeshes.forEach(element => {
+        var target = transforms[element];
+        if (target.length > 1) {
+            var next_transform = target[target.length - 2];
+            meshes[element].position.copy(next_transform.position);
+            meshes[element].rotation.copy(next_transform.rotation);
+            meshes[element].scale.copy(next_transform.scale);
+            target.pop();
+        }
+    });
 }
 
 function animate() {
