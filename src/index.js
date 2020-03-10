@@ -2,7 +2,6 @@ var $ = require('jquery');
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
-import { DragControls } from 'three/examples/jsm/controls/DragControls';
 
 var scene, camera, renderer;
 var raycaster, mouse;
@@ -11,7 +10,7 @@ var orbit;
 var transform, transforms, transforming;
 var drag;
 
-var meshes = {};
+var meshes = [];
 var selectedMeshes = []
 
 const DEFAULT_SIZE = 100;
@@ -46,13 +45,15 @@ function default_material() {
 
 function default_mesh(shape) {
     var geometry;
-    var mesh;
     switch (shape) {
         case "b": // Box
             geometry = new THREE.BoxBufferGeometry(DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_SIZE);
-            mesh = set_mesh(geometry, default_material());
+            break;
+        case "s": // Sphere
+            geometry = new THREE.SphereBufferGeometry(DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_SIZE);
             break;
     }
+    var mesh = set_mesh(geometry, default_material());
     scene.add(mesh);
 }
 
@@ -79,24 +80,48 @@ function log_transform(mesh) {
 
 function log_transforms() {
     selectedMeshes.forEach(element => {
-        log_transform(meshes[element]);
+        log_transform(element);
     })
-    console.log(transforms);
 }
 
 function reset_controls() {
     transform.visible = false;
 }
 
-function set_camera() {
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight,
-        0.1, 1000);
-    camera.position.set(DEFAULT_SIZE * 2, DEFAULT_SIZE * 2, DEFAULT_SIZE * 2);
-
+function remove_mesh(mesh) {
+    scene.remove(mesh);
+    deselect(mesh);
+    mesh.uuid in transforms && remove_transforms(mesh);
+    meshes.includes(mesh) && meshes.splice(meshes.indexOf(mesh), 1);
+    mesh.traverse(element => {
+        if (element instanceof THREE.Mesh) {
+            element.geometry && element.geometry.dispose();
+            if (element.material) {
+                if (Array.isArray(element.material)) {
+                    element.material.forEach(function (mtl, idx) {
+                        mtl.dispose();
+                    });
+                } else {
+                    element.material.dispose();
+                }
+            }
+        }
+    });
 }
 
-function set_default_geometry() {
-    return new THREE.BoxBufferGeometry(DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_SIZE);
+function remove_transforms(mesh) {
+    transforms[mesh.uuid].forEach(element => {
+        delete element.position;
+        delete element.rotation;
+        delete element.scale;
+    });
+    delete transforms[mesh.uuid];
+}
+
+function set_camera() {
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight,
+        0.1, 3000);
+    camera.position.set(DEFAULT_SIZE * 2, DEFAULT_SIZE * 2, DEFAULT_SIZE * 2);
 }
 
 function set_default_materials() {
@@ -110,16 +135,6 @@ function set_default_materials() {
     return materials;
 }
 
-function set_drag() {
-    drag = new DragControls(camera, renderer.domElement);
-    drag.addEventListener('dragstart', function(e) {
-        e.object.material.emissive.set(0xaaaaaa);
-    });
-    drag.addEventListener('dragend', function(e) {
-        e.object.material.emissive.set(0x000000);
-    });
-}
-
 function set_edges(mesh) {
     var geometry = new THREE.EdgesGeometry(mesh.geometry);
     var material = new THREE.LineBasicMaterial({color: 0xffffff});
@@ -130,7 +145,7 @@ function set_edges(mesh) {
 function set_clicks() {
     window.addEventListener('mousedown', function(e) {
         raycaster.setFromCamera(mouse, camera);
-        var intersects = raycaster.intersectObjects(Object.values(meshes));
+        var intersects = raycaster.intersectObjects(meshes);
         if (e.button == 0) {
             set_selection(intersects, select);
         } else if (e.button == 2) {
@@ -142,6 +157,11 @@ function set_clicks() {
 function set_keys() {
     window.addEventListener('keydown', function(e) {
         switch(e.keyCode) {
+            case 46: // Delete
+                selectedMeshes.forEach(element => {
+                    remove_mesh(element);
+                });
+                break;
             case 49: // 1
                 reset_controls();
                 break;
@@ -186,7 +206,7 @@ function set_logs() {
 function set_mesh(geometry, material) {
     var mesh = new THREE.Mesh(geometry, material);
     set_edges(mesh);
-    meshes[mesh.uuid] = mesh;
+    meshes.push(mesh);
     transforms[mesh.uuid] = [];
     return mesh;
 }
@@ -216,19 +236,20 @@ function set_scene() {
 }
 
 function deselect(mesh) {
-    if (selectedMeshes.includes(mesh.uuid)) {
+    if (selectedMeshes.includes(mesh)) {
         mesh.material.emissiveIntensity = 0;
         transform.detach();
-        selectedMeshes.splice(selectedMeshes.indexOf(mesh.uuid), 1);
+        selectedMeshes.splice(selectedMeshes.indexOf(mesh), 1);
     }
 }
 
 function select(mesh) {
-    if (!selectedMeshes.includes(mesh.uuid)) {
+    if (!selectedMeshes.includes(mesh)) {
         mesh.material.emissiveIntensity = 0.25;
         transform.detach();
         transform.attach(mesh);
-        selectedMeshes.push(mesh.uuid);
+        selectedMeshes.push(mesh);
+        log_transforms();
     }
 }
 
@@ -268,12 +289,12 @@ function set_window() {
 
 function undo_transform() {
     selectedMeshes.forEach(element => {
-        var target = transforms[element];
+        var target = transforms[element.uuid];
         if (target.length > 1) {
             var next_transform = target[target.length - 2];
-            meshes[element].position.copy(next_transform.position);
-            meshes[element].rotation.copy(next_transform.rotation);
-            meshes[element].scale.copy(next_transform.scale);
+            element.position.copy(next_transform.position);
+            element.rotation.copy(next_transform.rotation);
+            element.scale.copy(next_transform.scale);
             target.pop();
             render();
         }
@@ -287,7 +308,7 @@ function animate() {
 
 function render() {
     raycaster.setFromCamera(mouse, camera);
-    var intersects = raycaster.intersectObjects(Object.values(meshes));
+    var intersects = raycaster.intersectObjects(meshes);
     if (!((mouse.x == 0) && (mouse.y == 0))) {
         if (intersects.length > 0) {
             $('body').css('cursor', 'pointer');
