@@ -27,6 +27,7 @@ function init() {
     set_scene();
     set_camera();
     set_renderer();
+    set_light();
     set_mouse();
     set_raycaster();
     set_window();
@@ -140,6 +141,12 @@ function set_keys() {
                 break;
         }
     });
+}
+
+function set_light() {
+    var light = new THREE.AmbientLight(0xffffff);
+    scene.add(light);
+    
 }
 
 function set_logs() {
