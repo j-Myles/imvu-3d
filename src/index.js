@@ -4,7 +4,7 @@ import { TransformControls } from 'three/examples/jsm/controls/TransformControls
 
 
 var scene, camera, renderer;
-var orbit, transform;
+var orbit, transform, drag;
 
 var meshes = {};
 
@@ -34,6 +34,10 @@ function init() {
 
 }
 
+function reset_controls() {
+    transform.visible = false;
+}
+
 function set_camera() {
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight,
         0.1, 1000);
@@ -49,17 +53,28 @@ function set_default_material() {
     return new THREE.MeshNormalMaterial({});
 }
 
+function set_drag() {
+    drag = new DragControls()
+}
+
 function set_keys() {
     window.addEventListener('keydown', function(e) {
         switch(e.keyCode) {
+            case 49: // 1
+                reset_controls();
+                break;
+            case 50: // 2
+                reset_controls();
+                transform.visible = true;
+                break;
             case 82: // R
-                transform.setMode("rotate");
+                transform.visible && transform.setMode("rotate");
                 break;
             case 83: // S
-                transform.setMode("scale");
+                transform.visible && transform.setMode("scale");
                 break;
             case 84: // T
-                transform.setMode("translate");
+                transform.visible && transform.setMode("translate");
                 break;
             case 87: // W
                 Object.entries(meshes).forEach(([key, val]) => {
