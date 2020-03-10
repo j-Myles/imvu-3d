@@ -37,6 +37,7 @@ function init() {
     var material= set_default_materials();
     var mesh = set_mesh(geometry, material);
     scene.add(mesh);
+    set_edges(mesh);
     transform.attach(mesh);
     scene.add(transform);
     set_keys();
@@ -91,6 +92,13 @@ function set_default_materials() {
 
 function set_drag() {
     drag = new DragControls()
+}
+
+function set_edges(mesh) {
+    var geometry = new THREE.EdgesGeometry(mesh.geometry);
+    var material = new THREE.LineBasicMaterial({color: 0xffffff});
+    var edges = new THREE.LineSegments(geometry, material);
+    mesh.add(edges);
 }
 
 function set_keys() {
