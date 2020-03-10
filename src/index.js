@@ -112,18 +112,13 @@ function set_edges(mesh) {
 }
 
 function set_clicks() {
-    window.addEventListener('click', function(e) {
+    window.addEventListener('mousedown', function(e) {
         raycaster.setFromCamera(mouse, camera);
         var intersects = raycaster.intersectObjects(Object.values(meshes));
-        if (!((mouse.x == 0) && (mouse.y == 0))) {
-            if (intersects.length > 0) {
-                transform.detach();
-                for (var i = 0; i < intersects.length; i++) {
-                    intersects[i].object.material.emissiveIntensity = 0.25;
-                    transform.attach(intersects[i].object);
-                    break;
-                }
-            }
+        if (e.button == 0) {
+            set_selection(intersects, select);
+        } else if (e.button == 2) {
+            set_selection(intersects, deselect);
         }
     });
 }
@@ -175,7 +170,6 @@ function set_logs() {
 function set_mesh(geometry, material) {
     var mesh = new THREE.Mesh(geometry, material);
     
-    selectedMeshes = [mesh.uuid];
     meshes[mesh.uuid] = mesh;
     transforms[mesh.uuid] = [];
     log_transforms();
@@ -204,6 +198,35 @@ function set_scene() {
     scene = new THREE.Scene();
     scene.add(new THREE.GridHelper(GRID_CELLS, GRID_ROWS));
 
+}
+
+function deselect(mesh) {
+    if (selectedMeshes.includes(mesh.uuid)) {
+        mesh.material.emissiveIntensity = 0;
+        transform.detach();
+        selectedMeshes.splice(selectedMeshes.indexOf(mesh.uuid), 1);
+    }
+}
+
+function select(mesh) {
+    if (!selectedMeshes.includes(mesh.uuid)) {
+        mesh.material.emissiveIntensity = 0.25;
+        transform.detach();
+        transform.attach(mesh);
+        selectedMeshes.push(mesh.uuid);
+    }
+}
+
+function set_selection(intersects, selector) {
+    if (!((mouse.x == 0) && (mouse.y == 0))) {
+        if (intersects.length > 0) {
+            for (var i = 0; i < intersects.length; i++) {
+                var target = intersects[i].object;
+                selector(target)
+                break;
+            }
+        }
+    }
 }
 
 function set_transform() {
