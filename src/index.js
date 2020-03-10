@@ -52,13 +52,22 @@ function set_default_material() {
 function set_keys() {
     window.addEventListener('keydown', function(e) {
         switch(e.keyCode) {
+            case 82: // R
+                transform.setMode("rotate");
+                break;
+            case 83: // S
+                transform.setMode("scale");
+                break;
+            case 84: // T
+                transform.setMode("translate");
+                break;
             case 87: // W
                 Object.entries(meshes).forEach(([key, val]) => {
                     val.material.wireframe = !val.material.wireframe;
                 });
-
+                break;
         }
-    })
+    });
 }
 
 function set_mesh(geometry, material) {
