@@ -10,6 +10,7 @@ function init() {
     set_scene();
     set_camera();
     set_renderer();
+    set_window();
     set_geometry();
     set_material();
     set_mesh();
@@ -38,6 +39,10 @@ function set_scene() {
     scene = new THREE.Scene();
 }
 
+function set_window() {
+    window.addEventListener('resize', onWindowResize, false);
+}
+
 function set_renderer() {
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -47,4 +52,12 @@ function set_renderer() {
 function animate() {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
+}
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    
 }
