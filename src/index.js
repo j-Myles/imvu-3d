@@ -1,10 +1,14 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
-
+import { MOUSE, Vector2 } from 'three';
 
 var scene, camera, renderer;
-var orbit, transform, drag;
+var raycaster, intersects, mouse;
+
+var orbit
+var transform
+var drag;
 
 var meshes = {};
 
@@ -20,12 +24,16 @@ function init() {
     set_scene();
     set_camera();
     set_renderer();
+    set_mouse();
+    set_raycaster();
     set_window();
     set_orbit();
     set_transform();
     var geometry = set_default_geometry();
-    var material = set_default_material();
+    // var material = set_default_material();
+    var material= set_default_materials();
     var mesh = set_mesh(geometry, material);
+    console.log(mesh);
     meshes["default"] = mesh;
     scene.add(mesh);
     transform.attach(mesh);
@@ -36,6 +44,10 @@ function init() {
 
 function reset_controls() {
     transform.visible = false;
+}
+
+function undo_transform(id) {
+    
 }
 
 function set_camera() {
@@ -50,7 +62,18 @@ function set_default_geometry() {
 }
 
 function set_default_material() {
-    return new THREE.MeshNormalMaterial({});
+    return new THREE.MeshBasicMaterial({color: 0x606060});
+}
+
+function set_default_materials() {
+    var materials = [];
+    materials.push(new THREE.MeshBasicMaterial({color: 0xff0000}));
+    materials.push(new THREE.MeshBasicMaterial({color: 0xffff00}));
+    materials.push(new THREE.MeshBasicMaterial({color: 0xff00ff}));
+    materials.push(new THREE.MeshBasicMaterial({color: 0x00ff00}));
+    materials.push(new THREE.MeshBasicMaterial({color: 0x0000ff}));
+    materials.push(new THREE.MeshBasicMaterial({color: 0x00ffff}));
+    return materials;
 }
 
 function set_drag() {
@@ -78,7 +101,10 @@ function set_keys() {
                 break;
             case 87: // W
                 Object.entries(meshes).forEach(([key, val]) => {
-                    val.material.wireframe = !val.material.wireframe;
+                    // val.material.wireframe = !val.material.wireframe;
+                    val.material.forEach(element => {
+                        element.wireframe = !element.wireframe;
+                    })
                 });
                 break;
         }
@@ -89,8 +115,22 @@ function set_mesh(geometry, material) {
     return new THREE.Mesh(geometry, material);
 }
 
+function set_mouse() {
+    mouse = new THREE.Vector2();
+}
+
 function set_orbit() {
     orbit = new OrbitControls(camera, renderer.domElement);
+}
+
+function set_raycaster() {
+    raycaster = new THREE.Raycaster();
+}
+
+function set_renderer() {
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 }
 
 function set_scene() {
@@ -101,7 +141,13 @@ function set_scene() {
 
 function set_transform() {
     transform = new TransformControls(camera, renderer.domElement);
-    transform.addEventListener('change', render);
+    console.log(transform);
+    transform.addEventListener('scale-changed', function(e) {
+        console.log("Hey");
+    });
+    transform.addEventListener('change', function(e) {
+        render();
+    });
     transform.addEventListener('dragging-changed', function(e) {
         orbit.enabled = !e.value;
     });
@@ -110,12 +156,8 @@ function set_transform() {
 
 function set_window() {
     window.addEventListener('resize', onWindowResize, false);
-}
+    window.addEventListener('mousemove', onMouseMove, false);
 
-function set_renderer() {
-    renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
 }
 
 function animate() {
@@ -124,7 +166,19 @@ function animate() {
 }
 
 function render() {
+    raycaster.setFromCamera(mouse, camera);
+    intersects = raycaster.intersectObjects(Object.values(meshes), true);
+    if (!((mouse.x == 0) && (mouse.y == 0))) {
+        for (var i = 0; i < intersects.length; i++) {
+            intersects[i].object.material[0].color.set(0xffffff);
+        }
+    }
     renderer.render(scene, camera);
+}
+
+function onMouseMove(event) {
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
 }
 
 function onWindowResize() {
