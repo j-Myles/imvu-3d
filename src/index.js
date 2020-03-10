@@ -32,16 +32,9 @@ function init() {
     set_raycaster();
     set_window();
     set_orbit();
-
     set_transform();
     set_logs();
-    var geometry = set_default_geometry();
-    var material = default_material();
-    // var material= set_default_materials();
-    var mesh = set_mesh(geometry, material);
-    scene.add(mesh);
-    // transform.attach(mesh);
-    scene.add(transform);
+    default_mesh("b");
     set_clicks();
     set_keys();
 }
@@ -53,13 +46,14 @@ function default_material() {
 
 function default_mesh(shape) {
     var geometry;
+    var mesh;
     switch (shape) {
         case "b": // Box
             geometry = new THREE.BoxBufferGeometry(DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_SIZE);
             mesh = set_mesh(geometry, default_material());
             break;
     }
-    
+    scene.add(mesh);
 }
 
 function log_transform(mesh) {
@@ -263,6 +257,7 @@ function set_transform() {
             log_transforms();
         }
     });
+    scene.add(transform);
 }
 
 function set_window() {
