@@ -33,8 +33,8 @@ function init() {
     set_transform();
     set_logs();
     var geometry = set_default_geometry();
-    // var material = set_default_material();
-    var material= set_default_materials();
+    var material = set_default_material();
+    // var material= set_default_materials();
     var mesh = set_mesh(geometry, material);
     scene.add(mesh);
     set_edges(mesh);
@@ -91,7 +91,7 @@ function set_default_materials() {
 }
 
 function set_drag() {
-    drag = new DragControls()
+    drag = new DragControls(camera, renderer.domElement);
 }
 
 function set_edges(mesh) {
@@ -124,12 +124,12 @@ function set_keys() {
                 transform.visible && undo_transform();
                 break;
             case 87: // W
-                Object.entries(meshes).forEach(([key, val]) => {
-                    // val.material.wireframe = !val.material.wireframe;
-                    val.material.forEach(element => {
-                        element.wireframe = !element.wireframe;
-                    })
-                });
+                // Object.entries(meshes).forEach(([key, val]) => {
+                //     // val.material.wireframe = !val.material.wireframe;
+                //     val.material.forEach(element => {
+                //         element.wireframe = !element.wireframe;
+                //     })
+                // });
                 break;
         }
     });
@@ -212,12 +212,12 @@ function animate() {
 
 function render() {
     raycaster.setFromCamera(mouse, camera);
-    intersects = raycaster.intersectObjects(Object.values(meshes), true);
-    if (!((mouse.x == 0) && (mouse.y == 0))) {
-        for (var i = 0; i < intersects.length; i++) {
-            intersects[i].object.material[0].color.set(0xffffff);
-        }
-    }
+    // intersects = raycaster.intersectObjects(Object.values(meshes), true);
+    // if (!((mouse.x == 0) && (mouse.y == 0))) {
+    //     for (var i = 0; i < intersects.length; i++) {
+    //         intersects[i].object.material[0].color.set(0xffffff);
+    //     }
+    // }
     renderer.render(scene, camera);
 }
 
