@@ -29,6 +29,7 @@ function init() {
     set_light();
     set_mouse();
     set_raycaster();
+    set_gui();
     set_window();
     set_orbit();
     set_transform();
@@ -140,6 +141,12 @@ function set_edges(mesh) {
     var material = new THREE.LineBasicMaterial({color: 0xffffff});
     var edges = new THREE.LineSegments(geometry, material);
     mesh.add(edges);
+}
+
+function set_gui() {
+    var div = $('<div id="mode"></div>');
+    $('#mode').text("View Mode");
+    $('body').append(div);
 }
 
 function set_clicks() {
