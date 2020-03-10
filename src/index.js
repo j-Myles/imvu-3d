@@ -8,7 +8,7 @@ var scene, camera, renderer;
 var raycaster, mouse;
 
 var orbit;
-var transform, transforms;
+var transform, transforms, transforming;
 var drag;
 
 var meshes = {};
@@ -32,18 +32,34 @@ function init() {
     set_raycaster();
     set_window();
     set_orbit();
+
     set_transform();
     set_logs();
     var geometry = set_default_geometry();
-    var material = set_default_material();
+    var material = default_material();
     // var material= set_default_materials();
     var mesh = set_mesh(geometry, material);
     scene.add(mesh);
-    set_edges(mesh);
     // transform.attach(mesh);
     scene.add(transform);
     set_clicks();
     set_keys();
+}
+
+function default_material() {
+    return new THREE.MeshLambertMaterial({color: 0x606060, emissive: 0xffffff, 
+        emissiveIntensity: 0});
+}
+
+function default_mesh(shape) {
+    var geometry;
+    switch (shape) {
+        case "b": // Box
+            geometry = new THREE.BoxBufferGeometry(DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_SIZE);
+            mesh = set_mesh(geometry, default_material());
+            break;
+    }
+    
 }
 
 function log_transform(mesh) {
@@ -51,16 +67,27 @@ function log_transform(mesh) {
     log["position"] = mesh.position.clone();
     log["rotation"] = mesh.rotation.clone();
     log["scale"] = mesh.scale.clone();
-    if (transforms[mesh.uuid].length >= MAX_HISTORY) {
-        transforms[mesh.uuid].shift();
+    var target = transforms[mesh.uuid];
+    if (target.length > 0) {
+        var last_transform = target[target.length - 1];
+        if (!((last_transform.position.equals(log.position)) &&
+            (last_transform.rotation.equals(log.rotation)) &&
+            (last_transform.scale.equals(log.scale)))) {
+                if (target.length >= MAX_HISTORY) {
+                    target.shift();
+                }
+                target.push(log);
+        }
+    } else {
+        target.push(log);
     }
-    transforms[mesh.uuid].push(log);
 }
 
 function log_transforms() {
     selectedMeshes.forEach(element => {
         log_transform(meshes[element]);
     })
+    console.log(transforms);
 }
 
 function reset_controls() {
@@ -76,11 +103,6 @@ function set_camera() {
 
 function set_default_geometry() {
     return new THREE.BoxBufferGeometry(DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_SIZE);
-}
-
-function set_default_material() {
-    return new THREE.MeshLambertMaterial({color: 0x606060, emissive: 0xffffff, 
-        emissiveIntensity: 0});
 }
 
 function set_default_materials() {
@@ -169,10 +191,9 @@ function set_logs() {
 
 function set_mesh(geometry, material) {
     var mesh = new THREE.Mesh(geometry, material);
-    
+    set_edges(mesh);
     meshes[mesh.uuid] = mesh;
     transforms[mesh.uuid] = [];
-    log_transforms();
     return mesh;
 }
 
@@ -238,9 +259,10 @@ function set_transform() {
         orbit.enabled = !e.value;
     });
     transform.domElement.addEventListener('mouseup', function(e) {
-        log_transforms();
+        if (transform.dragging) {
+            log_transforms();
+        }
     });
-    
 }
 
 function set_window() {
