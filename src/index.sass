@@ -1,13 +1,26 @@
 $font-stack:    Helvetica, sans-serif;
 $primary-color: #1acc4c;
-$mode-padding: 30px;
+$primary-opacity: 50%;
+$primary-padding: 30px;
+$secondary-padding: $primary-padding - 10px;
+
+#coords
+    position: absolute
+    bottom: $secondary-padding
+    right: $primary-padding
+    width: 100%
+    padding: 0px
+    box-sizing: border-box
+    text-align: right
+    opacity: $primary-opacity
+
 
 #mode
     position: absolute
-    top: $mode-padding - 10px
-    left: $mode-padding
+    top: $secondary-padding
+    left: $primary-padding
     width: 100%
     padding: 10px
     box-sizing: border-box
     text-align: left
-    opacity: 50%
+    opacity: $primary-opacity

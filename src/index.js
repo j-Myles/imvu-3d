@@ -6,6 +6,8 @@ import { TransformControls } from 'three/examples/jsm/controls/TransformControls
 
 var scene, camera, renderer;
 var raycaster, mouse;
+var axes;
+
 
 var orbit;
 var transform, transforms;
@@ -28,6 +30,7 @@ function init() {
     set_camera();
     set_renderer();
     set_light();
+    // set_axes();
     set_mouse();
     set_raycaster();
     set_gui();
@@ -86,10 +89,6 @@ function log_transforms() {
     })
 }
 
-function reset_controls() {
-    transform.visible = false;
-}
-
 function remove_mesh(mesh) {
     scene.remove(mesh);
     deselect(mesh);
@@ -120,6 +119,11 @@ function remove_transforms(mesh) {
     delete transforms[mesh.uuid];
 }
 
+function set_axes() {
+    axes = new THREE.AxesHelper(5);
+    scene.add(axes);
+}
+
 function set_camera() {
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight,
         0.1, 3000);
@@ -145,9 +149,13 @@ function set_edges(mesh) {
 }
 
 function set_gui() {
-    var div = $('<div id="mode"></div>');
-    div.text("View Mode");
-    $('body').append(div);
+    var mode = $('<div id="mode"></div>');
+    mode.text("View Mode");
+    $('body').append(mode);
+    var coords = $('<div id="coords"></coords>');
+    coords.append('<div id="x">0</div>');
+    coords.append('<div id="y">0</div>');
+    $('body').append(coords);
 }
 
 function set_clicks() {
@@ -240,7 +248,6 @@ function set_renderer() {
 function set_scene() {
     scene = new THREE.Scene();
     scene.add(new THREE.GridHelper(GRID_CELLS, GRID_ROWS));
-
 }
 
 function deselect(mesh) {
@@ -318,7 +325,8 @@ function animate() {
 
 function render() {
     raycaster.setFromCamera(mouse, camera);
-    var intersects = raycaster.intersectObjects(meshes);
+    var intersects;
+    intersects = raycaster.intersectObjects(meshes);
     if (!((mouse.x == 0) && (mouse.y == 0))) {
         if (intersects.length > 0) {
             $('body').css('cursor', 'pointer');
@@ -337,6 +345,13 @@ function render() {
 function onMouseMove(event) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+    var vect = new THREE.Vector3(mouse.x, mouse.y, 0.5);
+    vect.unproject(camera);
+    var dir = vect.sub(camera.position).normalize();
+    var dist = - camera.position.z / dir.z;
+    var coords = camera.position.clone().add(dir.multiplyScalar(dist));
+    $('#coords #x').text(coords.x.toString());
+    $('#coords #y').text(coords.y.toString());
 }
 
 function onWindowResize() {
