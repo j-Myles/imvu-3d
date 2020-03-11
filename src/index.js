@@ -44,6 +44,12 @@ function init() {
     set_keys();
 }
 
+function apply_selected(func) {
+    selected.children.forEach(mesh => {
+        func(mesh);
+    });
+}
+
 function default_material() {
     return new THREE.MeshLambertMaterial({color: 0x606060, emissive: 0xffffff, 
         emissiveIntensity: 0});
@@ -85,9 +91,9 @@ function log_transform(mesh) {
 }
 
 function log_transforms() {
-    selected.children.forEach(mesh => {
-        log_transform(mesh);
-    })
+    apply_selected(log_transform);
+    console.log(transforms);
+
 }
 
 function remove_mesh(mesh) {
@@ -170,14 +176,10 @@ function set_keys() {
     window.addEventListener('keydown', function(e) {
         switch(e.keyCode) {
             case 46: // Delete
-                selected.children.forEach(mesh => {
-                    remove_mesh(mesh);
-                });
+                apply_selected(remove_mesh);
                 break;
             case 49: // 1
-                selected.children.forEach(mesh => {
-                    deselect(mesh);
-                })
+                apply_selected(deselect);
                 set_mode("View");
                 break;
             case 50: // 2
@@ -273,7 +275,9 @@ function select(mesh) {
         mesh.material.emissiveIntensity = 0.25;
         selected.add(mesh);
         log_transforms();
-        set_mode('Transform');
+        if (mode != 'Transform') {
+            set_mode('Transform');
+        }
     }
 }
 
@@ -319,13 +323,13 @@ function set_window() {
 }
 
 function undo_transform() {
-    selected.children.forEach(element => {
-        var target = transforms[element.uuid];
+    selected.children.forEach(mesh => {
+        var target = transforms[mesh.uuid];
         if (target.length > 1) {
             var next_transform = target[target.length - 2];
-            element.position.copy(next_transform.position);
-            element.rotation.copy(next_transform.rotation);
-            element.scale.copy(next_transform.scale);
+            mesh.position.copy(next_transform.position);
+            mesh.rotation.copy(next_transform.rotation);
+            mesh.scale.copy(next_transform.scale);
             target.pop();
             render();
         }
