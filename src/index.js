@@ -13,7 +13,8 @@ var transform, transforms;
 var mode;
 
 var meshes = [];
-var selectedMeshes = []
+var selected;
+
 
 const DEFAULT_SIZE = 100;
 const GRID_CELLS = 1000;
@@ -25,7 +26,6 @@ init();
 animate();
 
 function init() {
-    set_gui();
     set_scene();
     set_camera();
     set_renderer();
@@ -35,7 +35,9 @@ function init() {
     set_raycaster();
     set_window();
     set_orbit();
+    set_selected();
     set_transform();
+    set_gui();
     set_logs();
     default_mesh("b");
     set_clicks();
@@ -83,14 +85,14 @@ function log_transform(mesh) {
 }
 
 function log_transforms() {
-    selectedMeshes.forEach(element => {
-        log_transform(element);
+    selected.children.forEach(mesh => {
+        log_transform(mesh);
     })
 }
 
 function remove_mesh(mesh) {
-    scene.remove(mesh);
     deselect(mesh);
+    scene.remove(mesh);
     mesh.uuid in transforms && remove_transforms(mesh);
     meshes.includes(mesh) && meshes.splice(meshes.indexOf(mesh), 1);
     mesh.traverse(element => {
@@ -168,29 +170,29 @@ function set_keys() {
     window.addEventListener('keydown', function(e) {
         switch(e.keyCode) {
             case 46: // Delete
-                selectedMeshes.forEach(element => {
-                    remove_mesh(element);
+                selected.children.forEach(mesh => {
+                    remove_mesh(mesh);
                 });
                 break;
             case 49: // 1
-                selectedMeshes.forEach(element => {
-                    deselect(element);
+                selected.children.forEach(mesh => {
+                    deselect(mesh);
                 })
                 set_mode("View");
                 break;
             case 50: // 2
                 break;
             case 82: // R
-                transform.visible && transform.setMode("rotate");
+                (mode == 'Transform') && transform.setMode("rotate");
                 break;
             case 83: // S
-                transform.visible && transform.setMode("scale");
+                (mode == 'Transform') && transform.setMode("scale");
                 break;
             case 84: // T
-                transform.visible && transform.setMode("translate");
+                (mode == 'Transform') && transform.setMode("translate");
                 break;
             case 85: // U
-                transform.visible && undo_transform();
+                (mode == 'Transform') && undo_transform();
                 break;
             case 87: // W
                 // Object.entries(meshes).forEach(([key, val]) => {
@@ -224,7 +226,12 @@ function set_mesh(geometry, material) {
 
 function set_mode(name) {
     mode = name;
-    $('#mode').text(mode + ' Mode');
+    if (name == 'Transform') {
+        transform.visible = true;
+    } else if (name == 'View') {
+        transform.visible = false;
+    }
+    $('#mode').text(name + ' Mode');
 }
 
 function set_mouse() {
@@ -251,22 +258,22 @@ function set_scene() {
 }
 
 function deselect(mesh) {
-    if (selectedMeshes.includes(mesh)) {
+    if (selected.children.includes(mesh)) {
         mesh.material.emissiveIntensity = 0;
-        transform.detach();
-        selectedMeshes.splice(selectedMeshes.indexOf(mesh), 1);
-        $('#mode').text('View Mode');
+        selected.remove(mesh);
+        scene.add(mesh);
+        if (selected.children.length == 0) {
+            set_mode('View');
+        }
     }
 }
 
 function select(mesh) {
-    if (!selectedMeshes.includes(mesh)) {
+    if (!selected.children.includes(mesh)) {
         mesh.material.emissiveIntensity = 0.25;
-        transform.detach();
-        transform.attach(mesh);
-        selectedMeshes.push(mesh);
+        selected.add(mesh);
         log_transforms();
-        $('#mode').text('Transform Mode');
+        set_mode('Transform');
     }
 }
 
@@ -282,6 +289,11 @@ function set_selection(intersects, selector) {
     }
 }
 
+function set_selected() {
+    selected = new THREE.Group();
+    scene.add(selected);
+}
+
 function set_transform() {
     transform = new TransformControls(camera, renderer.domElement);
     transform.addEventListener('change', function(e) {
@@ -295,6 +307,8 @@ function set_transform() {
             log_transforms();
         }
     });
+    transform.attach(selected);
+    transform.visible = false;
     scene.add(transform);
 }
 
@@ -305,7 +319,7 @@ function set_window() {
 }
 
 function undo_transform() {
-    selectedMeshes.forEach(element => {
+    selected.children.forEach(element => {
         var target = transforms[element.uuid];
         if (target.length > 1) {
             var next_transform = target[target.length - 2];
@@ -320,10 +334,11 @@ function undo_transform() {
 
 function animate() {
     requestAnimationFrame(animate);
+    rays();
     render();
 }
 
-function render() {
+function rays() {
     raycaster.setFromCamera(mouse, camera);
     var intersects;
     intersects = raycaster.intersectObjects(meshes);
@@ -333,12 +348,10 @@ function render() {
         } else {
             $('body').css('cursor', 'default');
         }
-        // for (var i = 0; i < intersects.length; i++) {
-        //     console.log("Here");
-        //     break;
-        //     // intersects[i].object.material[0].color.set(0xffffff);
-        // }
     }
+}
+
+function render() {
     renderer.render(scene, camera);
 }
 
