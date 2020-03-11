@@ -69,31 +69,24 @@ function default_mesh(shape) {
     scene.add(mesh);
 }
 
-function log_transform(mesh) {
+function log_transforms() {
     var log = {};
-    log["position"] = mesh.position.clone();
-    log["rotation"] = mesh.rotation.clone();
-    log["scale"] = mesh.scale.clone();
-    var target = transforms[mesh.uuid];
-    if (target.length > 0) {
-        var last_transform = target[target.length - 1];
+    log.position = selected.position.clone();
+    log.rotation = selected.rotation.clone();
+    log.scale = selected.scale.clone();
+    if (transforms.length > 0) {
+        var last_transform = transforms[transforms.length - 1];
         if (!((last_transform.position.equals(log.position)) &&
             (last_transform.rotation.equals(log.rotation)) &&
             (last_transform.scale.equals(log.scale)))) {
-                if (target.length >= MAX_HISTORY) {
-                    target.shift();
+                if (transforms.length >= MAX_HISTORY) {
+                    transforms.shift();
                 }
-                target.push(log);
-        }
+                transforms.push(log);
+            }
     } else {
-        target.push(log);
+        transforms.push(log);
     }
-}
-
-function log_transforms() {
-    apply_selected(log_transform);
-    console.log(transforms);
-
 }
 
 function remove_mesh(mesh) {
@@ -215,7 +208,7 @@ function set_light() {
 }
 
 function set_logs() {
-    transforms = {};
+    transforms = [];
 }
 
 function set_mesh(geometry, material) {
@@ -264,6 +257,7 @@ function deselect(mesh) {
         mesh.material.emissiveIntensity = 0;
         selected.remove(mesh);
         scene.add(mesh);
+        mesh.applyMatrix4(selected.matrix);
         if (selected.children.length == 0) {
             set_mode('View');
         }
@@ -323,17 +317,14 @@ function set_window() {
 }
 
 function undo_transform() {
-    selected.children.forEach(mesh => {
-        var target = transforms[mesh.uuid];
-        if (target.length > 1) {
-            var next_transform = target[target.length - 2];
-            mesh.position.copy(next_transform.position);
-            mesh.rotation.copy(next_transform.rotation);
-            mesh.scale.copy(next_transform.scale);
-            target.pop();
-            render();
-        }
-    });
+    if (transforms.length > 1) {
+        var next_transform = transforms[transforms.length - 2];
+        selected.position.copy(next_transform.position);
+        selected.rotation.copy(next_transform.rotation);
+        selected.scale.copy(next_transform.scale);
+        transforms.pop();
+        render();
+    }
 }
 
 function animate() {
