@@ -6,12 +6,11 @@ import { TransformControls } from 'three/examples/jsm/controls/TransformControls
 
 var scene, camera, renderer;
 var raycaster, mouse;
-var axes;
-
 
 var orbit;
 var transform, transforms;
 
+var mode;
 
 var meshes = [];
 var selectedMeshes = []
@@ -26,6 +25,7 @@ init();
 animate();
 
 function init() {
+    set_gui();
     set_scene();
     set_camera();
     set_renderer();
@@ -33,7 +33,6 @@ function init() {
     // set_axes();
     set_mouse();
     set_raycaster();
-    set_gui();
     set_window();
     set_orbit();
     set_transform();
@@ -119,11 +118,6 @@ function remove_transforms(mesh) {
     delete transforms[mesh.uuid];
 }
 
-function set_axes() {
-    axes = new THREE.AxesHelper(5);
-    scene.add(axes);
-}
-
 function set_camera() {
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight,
         0.1, 3000);
@@ -149,9 +143,9 @@ function set_edges(mesh) {
 }
 
 function set_gui() {
-    var mode = $('<div id="mode"></div>');
-    mode.text("View Mode");
-    $('body').append(mode);
+    var container = $('<div id="mode"></div>');
+    $('body').append(container);
+    set_mode("View");
     var coords = $('<div id="coords"></coords>');
     coords.append('<div id="x">0.00000</div>');
     coords.append('<div id="y">0.00000</div>');
@@ -182,6 +176,7 @@ function set_keys() {
                 selectedMeshes.forEach(element => {
                     deselect(element);
                 })
+                set_mode("View");
                 break;
             case 50: // 2
                 break;
@@ -225,6 +220,11 @@ function set_mesh(geometry, material) {
     meshes.push(mesh);
     transforms[mesh.uuid] = [];
     return mesh;
+}
+
+function set_mode(name) {
+    mode = name;
+    $('#mode').text(mode + ' Mode');
 }
 
 function set_mouse() {
