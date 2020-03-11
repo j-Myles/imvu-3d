@@ -8,8 +8,8 @@ var scene, camera, renderer;
 var raycaster, mouse;
 
 var orbit;
-var transform, transforms, transforming;
-var drag;
+var transform, transforms;
+
 
 var meshes = [];
 var selectedMeshes = []
@@ -146,7 +146,7 @@ function set_edges(mesh) {
 
 function set_gui() {
     var div = $('<div id="mode"></div>');
-    $('#mode').text("View Mode");
+    div.text("View Mode");
     $('body').append(div);
 }
 
@@ -248,6 +248,7 @@ function deselect(mesh) {
         mesh.material.emissiveIntensity = 0;
         transform.detach();
         selectedMeshes.splice(selectedMeshes.indexOf(mesh), 1);
+        $('#mode').text('View Mode');
     }
 }
 
@@ -258,6 +259,7 @@ function select(mesh) {
         transform.attach(mesh);
         selectedMeshes.push(mesh);
         log_transforms();
+        $('#mode').text('Transform Mode');
     }
 }
 
