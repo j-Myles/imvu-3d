@@ -1,20 +1,23 @@
 const path = require('path');
 const htmlWebpackPlugin = require('html-webpack-plugin');
+const miniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
   mode: 'development',
-  entry: path.join(__dirname, 'src', 'index'),
+  entry: {
+    app: [path.join(__dirname, 'src', 'index.js'), 
+      path.join(__dirname, 'src', 'index.sass')],
+  },
   watch: true,
   output: {
     path: path.join(__dirname, 'dist'),
     publicPath: '/dist/',
     filename: "bundle.js",
-    chunkFilename: '[name].js'
+    chunkFilename: '[id].bundle.js',
   },
-
   module: {
     rules: [{
-      test: /.jsx?$/,
+      test: /\.jsx?$/,
       include: [
         path.resolve(__dirname, 'src')
       ],
@@ -32,8 +35,21 @@ module.exports = {
         ]
       }
     }, {
-      test: /.html?$/,
+      test: /\.html?$/,
+      include: [
+        path.resolve(__dirname, 'src')
+      ],
       loader: 'html-loader',
+    }, {
+      test: /\.s[ac]ss$/,
+      include: [
+        path.resolve(__dirname, 'src')
+      ],
+      loader: [
+        'style-loader',
+        'css-loader',
+        'sass-loader',
+      ]
     }]
   },
 
@@ -41,11 +57,14 @@ module.exports = {
     new htmlWebpackPlugin({
       template: "./src/index.html",
       filename: "./index.html"
+    }),
+    new miniCssExtractPlugin({
+      filename: '[name].css',
     })
   ],
   
   resolve: {
-    extensions: ['.json', '.js', '.jsx']
+    extensions: ['.json', '.js', '.jsx', '.sass']
   },
 
   devtool: 'source-map',
