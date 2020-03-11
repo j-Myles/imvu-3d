@@ -153,8 +153,8 @@ function set_gui() {
     mode.text("View Mode");
     $('body').append(mode);
     var coords = $('<div id="coords"></coords>');
-    coords.append('<div id="x">0</div>');
-    coords.append('<div id="y">0</div>');
+    coords.append('<div id="x">0.00000</div>');
+    coords.append('<div id="y">0.00000</div>');
     $('body').append(coords);
 }
 
@@ -350,8 +350,8 @@ function onMouseMove(event) {
     var dir = vect.sub(camera.position).normalize();
     var dist = - camera.position.z / dir.z;
     var coords = camera.position.clone().add(dir.multiplyScalar(dist));
-    $('#coords #x').text(coords.x.toString());
-    $('#coords #y').text(coords.y.toString());
+    $('#coords #x').text(coords.x.toPrecision(6));
+    $('#coords #y').text(coords.y.toPrecision(6));
 }
 
 function onWindowResize() {
