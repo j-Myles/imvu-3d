@@ -171,11 +171,11 @@ function set_keys() {
                 });
                 break;
             case 49: // 1
-                reset_controls();
+                selectedMeshes.forEach(element => {
+                    deselect(element);
+                })
                 break;
             case 50: // 2
-                reset_controls();
-                transform.visible = true;
                 break;
             case 82: // R
                 transform.visible && transform.setMode("rotate");
