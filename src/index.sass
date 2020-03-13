@@ -2,25 +2,29 @@ $font-stack:    Helvetica, sans-serif;
 $primary-color: #1acc4c;
 $primary-opacity: 50%;
 $primary-padding: 30px;
-$secondary-padding: $primary-padding - 10px;
+$secondary-padding: $primary-padding * 1.5;
+
+=layout($alignment)
+    position: absolute
+    width: 100%
+    box-sizing: border-box
+    text-align: $alignment
+    opacity: $primary-opacity
 
 #coords
-    position: absolute
-    bottom: $secondary-padding
+    +layout(right)
+    bottom: $primary-padding
     right: $primary-padding
-    width: 100%
-    padding: 0px
-    box-sizing: border-box
-    text-align: right
-    opacity: $primary-opacity
 
 
 #mode
-    position: absolute
-    top: $secondary-padding
-    left: $primary-padding
-    width: 100%
-    padding: 10px
-    box-sizing: border-box
-    text-align: left
-    opacity: $primary-opacity
+    +layout(left)
+    top: $primary-padding
+    left: $secondary-padding
+
+#primitive
+    +layout(right)
+    top: $primary-padding
+    right: $primary-padding
+    color: #00ddff
+    opacity: 100%

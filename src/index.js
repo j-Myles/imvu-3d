@@ -3,51 +3,84 @@ var $ = require('jquery');
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
+import { PlaneBufferGeometry } from 'three';
 
 var scene, camera, renderer;
-var raycaster, mouse;
+var raycaster, plane, mouse;
 
 var orbit;
 var transform, transforms;
 
-var mode;
+var mode
+var coords;
 
+var primitive;
 var meshes = [];
 var selected;
-
 
 const DEFAULT_SIZE = 100;
 const GRID_CELLS = 1000;
 const GRID_ROWS = 10;
 const MAX_HISTORY = 10;
-
+const COORD_DIGITS = 6;
 
 init();
 animate();
 
 function init() {
     set_scene();
+    set_plane();
     set_camera();
     set_renderer();
     set_light();
     // set_axes();
     set_mouse();
     set_raycaster();
-    set_window();
     set_orbit();
     set_selected();
     set_transform();
     set_gui();
+    set_coords();
     set_logs();
-    default_mesh("b");
+    default_mesh("box");
     set_clicks();
     set_keys();
+    set_window();
 }
 
 function apply_selected(func) {
     selected.children.forEach(mesh => {
         func(mesh);
     });
+}
+
+function assign_primitive(event, prim1, prim2) {
+    if (mode == 'Create') {
+        if (event.shiftKey) {
+            set_primitive(prim1);
+        } else {
+            set_primitive(prim2);
+        }
+    }
+}
+
+function create_mesh() {
+    switch (primitive) {
+        case 'Cube':
+            default_mesh('box');
+            break;
+        case 'Square':
+            default_mesh('plane');
+            break;
+        case 'Sphere':
+            default_mesh('sphere');
+            break;
+        case 'Circle':
+            default_mesh('circle');
+            break;
+        default:
+            break;
+    }
 }
 
 function default_material() {
@@ -58,14 +91,27 @@ function default_material() {
 function default_mesh(shape) {
     var geometry;
     switch (shape) {
-        case "b": // Box
+        case "box":
             geometry = new THREE.BoxBufferGeometry(DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_SIZE);
             break;
-        case "s": // Sphere
+        case "circle":
+            geometry = new THREE.CircleBufferGeometry(DEFAULT_SIZE, DEFAULT_SIZE);
+            break;
+        case "cylinder":
+            geometry = new THREE.CylinderBufferGeometry(DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_SIZE);
+            break;
+        case "plane":
+            geometry = new THREE.PlaneBufferGeometry(DEFAULT_SIZE, DEFAULT_SIZE);
+            break;
+        case "ring":
+            geometry = new THREE.RingBufferGeometry(DEFAULT_SIZE / 2, DEFAULT_SIZE);
+            break;
+        case "sphere":
             geometry = new THREE.SphereBufferGeometry(DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_SIZE);
             break;
     }
     var mesh = set_mesh(geometry, default_material());
+    mesh.position.set(coords.x, 0, coords.z);
     scene.add(mesh);
 }
 
@@ -125,6 +171,13 @@ function set_camera() {
     camera.position.set(DEFAULT_SIZE * 2, DEFAULT_SIZE * 2, DEFAULT_SIZE * 2);
 }
 
+function set_coords() {
+    coords = {};
+    coords.x = 0;
+    coords.y = 0;
+    coords.z = 0;
+}
+
 function set_default_materials() {
     var materials = [];
     materials.push(new THREE.MeshBasicMaterial({color: 0xff0000}));
@@ -144,23 +197,44 @@ function set_edges(mesh) {
 }
 
 function set_gui() {
+    set_gui_coords();
+    set_gui_mode();
+    set_gui_primitive();
+}
+
+function set_gui_coords() {
+    var container = $('<div id="coords"></coords>');
+    container.append('<div id="x">0.00000</div>');
+    // container.append('<div id="y">0.00000</div>');
+    container.append('<div id="z">0.00000</div>');
+    $('body').append(container);
+}
+
+function set_gui_mode() {
     var container = $('<div id="mode"></div>');
     $('body').append(container);
     set_mode("View");
-    var coords = $('<div id="coords"></coords>');
-    coords.append('<div id="x">0.00000</div>');
-    coords.append('<div id="y">0.00000</div>');
-    $('body').append(coords);
+}
+
+function set_gui_primitive() {
+    var container = $('<div id="primitive"></div>');
+    $('body').append(container);
+    $('#primitive').css('visibility', 'hidden');
+    set_primitive("Cube");
 }
 
 function set_clicks() {
     window.addEventListener('mousedown', function(e) {
-        raycaster.setFromCamera(mouse, camera);
-        var intersects = raycaster.intersectObjects(meshes);
-        if (e.button == 0) {
-            set_selection(intersects, select);
-        } else if (e.button == 2) {
-            set_selection(intersects, deselect);
+        if (mode == 'Create') {
+            create_mesh();
+        } else {
+            raycaster.setFromCamera(mouse, camera);
+            var intersects = raycaster.intersectObjects(meshes);
+            if (e.button == 0) {
+                set_selection(intersects, select);
+            } else if (e.button == 2) {
+                set_selection(intersects, deselect);
+            }
         }
     });
 }
@@ -176,26 +250,28 @@ function set_keys() {
                 set_mode("View");
                 break;
             case 50: // 2
+                apply_selected(deselect);
+                set_mode("Create");
                 break;
-            case 82: // R
+            case 65: // A
+                (mode == 'Transform') && transform.setMode("translate");
+                break;
+            case 68: // D
                 (mode == 'Transform') && transform.setMode("rotate");
+                break;
+            case 69: // E
+                break;
+            case 81: // Q
+                assign_primitive(e, 'Square', 'Cube');
                 break;
             case 83: // S
                 (mode == 'Transform') && transform.setMode("scale");
-                break;
-            case 84: // T
-                (mode == 'Transform') && transform.setMode("translate");
                 break;
             case 85: // U
                 (mode == 'Transform') && undo_transform();
                 break;
             case 87: // W
-                // Object.entries(meshes).forEach(([key, val]) => {
-                //     // val.material.wireframe = !val.material.wireframe;
-                //     val.material.forEach(element => {
-                //         element.wireframe = !element.wireframe;
-                //     })
-                // });
+                assign_primitive(e, 'Circle', 'Sphere');
                 break;
         }
     });
@@ -223,8 +299,15 @@ function set_mode(name) {
     mode = name;
     if (name == 'Transform') {
         transform.visible = true;
-    } else if (name == 'View') {
-        transform.visible = false;
+    } else {
+        transform.visible && (transform.visible = false);
+    }
+    if (name == 'Create') {
+        set_primitive('Cube');
+        $('#primitive').css('visibility', 'visible');
+    } else {
+        ($('#primitive').css('visibility') == 'visible') &&
+        $('#primitive').css('visibility', 'hidden');
     }
     $('#mode').text(name + ' Mode');
 }
@@ -233,8 +316,22 @@ function set_mouse() {
     mouse = new THREE.Vector2();
 }
 
+function set_primitive(prim) {
+    primitive = prim;
+    $('#primitive').text(primitive);
+}
+
 function set_orbit() {
     orbit = new OrbitControls(camera, renderer.domElement);
+}
+
+function set_plane() {
+    var geometry = new THREE.BoxBufferGeometry(GRID_CELLS, 0, GRID_CELLS);
+    var material = new THREE.LineBasicMaterial();
+    plane = new THREE.Mesh(geometry, material);
+    plane.visible = false;
+    scene.add(plane);
+
 }
 
 function set_raycaster() {
@@ -267,7 +364,13 @@ function deselect(mesh) {
 function select(mesh) {
     if (!selected.children.includes(mesh)) {
         mesh.material.emissiveIntensity = 0.25;
+        if (selected.children.length == 0) {
+            transform.applyMatrix4(mesh.matrix);
+        } else {
+            
+        }
         selected.add(mesh);
+        console.log(mesh.position);
         log_transforms();
         if (mode != 'Transform') {
             set_mode('Transform');
@@ -313,7 +416,6 @@ function set_transform() {
 function set_window() {
     window.addEventListener('resize', onWindowResize, false);
     window.addEventListener('mousemove', onMouseMove, false);
-
 }
 
 function undo_transform() {
@@ -353,13 +455,23 @@ function render() {
 function onMouseMove(event) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
-    var vect = new THREE.Vector3(mouse.x, mouse.y, 0.5);
-    vect.unproject(camera);
-    var dir = vect.sub(camera.position).normalize();
-    var dist = - camera.position.z / dir.z;
-    var coords = camera.position.clone().add(dir.multiplyScalar(dist));
-    $('#coords #x').text(coords.x.toPrecision(6));
-    $('#coords #y').text(coords.y.toPrecision(6));
+    raycaster.setFromCamera(mouse, camera);
+    var intersects = raycaster.intersectObject(plane);
+    if (intersects.length > 0) {
+        var point = intersects[0].point;
+        coords.x = point.x;
+        coords.z = point.z;
+    }
+    // vect.set(mouse.x, mouse.y, 0.5);
+    // vect.unproject(camera);
+    // var dir = vect.sub(camera.position).normalize();
+    // var dist = - camera.position.z / dir.z;
+    // var point = camera.position.clone().add(dir.multiplyScalar(dist));
+    // coords.x = point.x;
+    // coords.y = point.y;
+    $('#coords #x').text(coords.x.toPrecision(COORD_DIGITS));
+    // $('#coords #y').text(coords.y.toPrecision(COORD_DIGITS));  
+    $('#coords #z').text(coords.z.toPrecision(COORD_DIGITS));
 }
 
 function onWindowResize() {
