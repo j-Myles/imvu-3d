@@ -49,9 +49,14 @@ function init() {
 }
 
 function apply_selected(func) {
-    selected.children.forEach(mesh => {
+    var twins = selected.children.slice(0);
+    twins.forEach(mesh => {
         func(mesh);
     });
+}
+
+function apply_transform(mesh) {
+    mesh.applyMatrix4(selected.matrix);
 }
 
 function assign_primitive(event, prim1, prim2) {
@@ -138,7 +143,7 @@ function log_transforms() {
 function remove_mesh(mesh) {
     deselect(mesh);
     scene.remove(mesh);
-    mesh.uuid in transforms && remove_transforms(mesh);
+    // mesh.uuid in transforms && remove_transforms(mesh);
     meshes.includes(mesh) && meshes.splice(meshes.indexOf(mesh), 1);
     mesh.traverse(element => {
         if (element instanceof THREE.Mesh) {
@@ -224,34 +229,66 @@ function set_gui_primitive() {
 }
 
 function set_clicks() {
-    window.addEventListener('mousedown', function(e) {
-        if (mode == 'Create') {
-            create_mesh();
-        } else {
-            raycaster.setFromCamera(mouse, camera);
-            var intersects = raycaster.intersectObjects(meshes);
-            if (e.button == 0) {
+    window.addEventListener('mousedown', function(event) {
+        raycaster.setFromCamera(mouse, camera);
+        var intersects = raycaster.intersectObjects(meshes);
+        switch (mode) {
+            case 'Create':
+                if (event.button == THREE.MOUSE.LEFT) {
+                    create_mesh();
+                } else if (event.button == THREE.MOUSE.RIGHT) {
+                    set_mode('View');
+                }
+                break;
+            case 'Select':
+                if (event.button == THREE.MOUSE.LEFT) {
+                    set_selection(intersects, select);
+                } else if (event.button == THREE.MOUSE.RIGHT) {
+                    if (selected.children.length == 0) {
+                        set_mode('View');
+                    } else {
+                        set_selection(intersects, deselect);
+                    }
+                }
+                break;
+            case 'Transform':
+                (event.button == THREE.MOUSE.RIGHT) && set_mode('Select');
+                break;
+            default:
+                break;
+        }
+    });
+    window.addEventListener('dblclick', function(event) {
+        raycaster.setFromCamera(mouse, camera);
+        var intersects = raycaster.intersectObjects(meshes);
+        switch (mode) {
+            case 'View':
+                set_mode('Select');
                 set_selection(intersects, select);
-            } else if (e.button == 2) {
-                set_selection(intersects, deselect);
-            }
+                break;
+            default:
+                break;
         }
     });
 }
 
 function set_keys() {
-    window.addEventListener('keydown', function(e) {
-        switch(e.keyCode) {
+    window.addEventListener('keydown', function(event) {
+        switch(event.keyCode) {
             case 46: // Delete
                 apply_selected(remove_mesh);
                 break;
             case 49: // 1
-                apply_selected(deselect);
                 set_mode("View");
                 break;
             case 50: // 2
-                apply_selected(deselect);
                 set_mode("Create");
+                break;
+            case 51: // 3
+                set_mode("Select");
+                break;
+            case 52: // 4
+                set_mode("Transform");
                 break;
             case 65: // A
                 (mode == 'Transform') && transform.setMode("translate");
@@ -262,7 +299,7 @@ function set_keys() {
             case 69: // E
                 break;
             case 81: // Q
-                assign_primitive(e, 'Square', 'Cube');
+                assign_primitive(event, 'Square', 'Cube');
                 break;
             case 83: // S
                 (mode == 'Transform') && transform.setMode("scale");
@@ -271,7 +308,11 @@ function set_keys() {
                 (mode == 'Transform') && undo_transform();
                 break;
             case 87: // W
-                assign_primitive(e, 'Circle', 'Sphere');
+                assign_primitive(event, 'Circle', 'Sphere');
+                break;
+            case 90: // Z
+                (event.shiftKey) && undo();
+            default:
                 break;
         }
     });
@@ -296,20 +337,55 @@ function set_mesh(geometry, material) {
 }
 
 function set_mode(name) {
+    set_mode_create(name);
+    set_mode_transform(name);
+    set_mode_select(name);
     mode = name;
-    if (name == 'Transform') {
-        transform.visible = true;
+    $('#mode').text(name + ' Mode');
+}
+
+function set_mode_select(name) {
+    if (name == 'Select') {
+        
     } else {
-        transform.visible && (transform.visible = false);
+        if (mode == 'Select') {
+            if (name != 'Transform') {
+                apply_selected(deselect);
+            }
+        }
     }
+}
+
+function set_mode_create(name) {
     if (name == 'Create') {
-        set_primitive('Cube');
         $('#primitive').css('visibility', 'visible');
     } else {
         ($('#primitive').css('visibility') == 'visible') &&
         $('#primitive').css('visibility', 'hidden');
     }
-    $('#mode').text(name + ' Mode');
+}
+
+function set_mode_transform(name) {
+    if (name == 'Transform') {
+        if (mode != 'Transform') {
+            if (selected.children.length > 0) {
+                var target = selected.children[0];
+                transform.position.copy(target.position);
+                transform.attach(selected);
+                transform.visible = true;
+            }
+        }
+    } else {
+        if (mode == 'Transform') {
+            apply_selected(apply_transform)
+            apply_selected(deselect);
+            selected.position.set(0, 0, 0);
+            selected.rotation.set(0, 0, 0);
+            selected.scale.set(1, 1, 1);
+            transform.detach(selected);
+            transform.visible = false;
+        }
+    }
 }
 
 function set_mouse() {
@@ -354,10 +430,15 @@ function deselect(mesh) {
         mesh.material.emissiveIntensity = 0;
         selected.remove(mesh);
         scene.add(mesh);
-        mesh.applyMatrix4(selected.matrix);
-        if (selected.children.length == 0) {
-            set_mode('View');
-        }
+        // mesh.applyMatrix4(selected.matrix);
+        // if (selected.children.length == 0) {
+        //     selected.position.set(0, 0, 0);
+        //     selected.rotation.set(0, 0, 0);
+        //     selected.scale.set(1, 1, 1);
+        //     set_mode('View');
+        // } else {
+            
+        // }
     }
 }
 
@@ -365,27 +446,32 @@ function select(mesh) {
     if (!selected.children.includes(mesh)) {
         mesh.material.emissiveIntensity = 0.25;
         if (selected.children.length == 0) {
-            transform.applyMatrix4(mesh.matrix);
-        } else {
-            
+            // transform.detach();
+            // transform.position.copy(mesh.position);
+            // transform.rotation.copy(mesh.rotation);
+            // transform.scale.copy(mesh.scale);
+            // transform.attach(selected);
         }
         selected.add(mesh);
-        console.log(mesh.position);
-        log_transforms();
-        if (mode != 'Transform') {
-            set_mode('Transform');
-        }
+        // log_transforms();
+        // if (mode != 'Transform') {
+        //     set_mode('Transform');
+        // }
+    } else {
+        set_mode('Transform');
     }
 }
 
 function set_selection(intersects, selector) {
     if (!((mouse.x == 0) && (mouse.y == 0))) {
         if (intersects.length > 0) {
-            for (var i = 0; i < intersects.length; i++) {
-                var target = intersects[i].object;
-                selector(target)
-                break;
-            }
+            var target = intersects[0].object;
+            selector(target)
+            // for (var i = 0; i < intersects.length; i++) {
+            //     var target = intersects[i].object;
+            //     selector(target)
+            //     break;
+            // }
         }
     }
 }
@@ -405,10 +491,10 @@ function set_transform() {
     });
     transform.domElement.addEventListener('mouseup', function(e) {
         if (transform.dragging) {
-            log_transforms();
+            console.log(selected.position);
+            // log_transforms();
         }
     });
-    transform.attach(selected);
     transform.visible = false;
     scene.add(transform);
 }
@@ -427,6 +513,10 @@ function undo_transform() {
         transforms.pop();
         render();
     }
+}
+
+function undo() {
+
 }
 
 function animate() {
